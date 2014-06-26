@@ -12,34 +12,10 @@
 
 		<div class="panel panel-primary">
 			<table>
-				<tbody nz-treetable links="links" nodes="nodes" node-id="'idy'" get-children-fn="doStuff">
+				<tbody nz-treetable get-initial="initialObjs" node-id="'idy'" get-children-fn="doStuff" order-by="node.myValue">
 					<tr>
 						<td treetable-indent></div><span>{{row.node.name}}</span></td>
 						<td><input ng-model="row.node.myValue"></input></td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
-						<td>{{row.level}}</td>
 					</tr>
 				</tbody>
 			</table>

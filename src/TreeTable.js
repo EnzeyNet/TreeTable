@@ -27,7 +27,7 @@
 		return set;
 	};
 
-	module.directive('nzTreetable', function ($parse, $sce, $timeout) {
+	module.directive('nzTreetable', function ($parse, $sce, $timeout, $filter) {
 		return {
 			scope: true,
 			compile: function(element, attrs){
@@ -39,8 +39,9 @@
 				};
 
 				return function (scope, element, attrs) {
-					var uniqueSpacer = "\u000A\u0099\u000D";
+					var uniqueSpacer = "\u0099";
 					scope.treeTableObjDisplayArray = [];
+					var orderBy = '';
 					var getChildrenFn = $parse(attrs.getChildrenFn)(scope);
 					if (angular.isDefined(attrs.parentNodeId)) {
 						attrPath.parentNodeId = $parse(attrs.parentNodeId)(scope);
@@ -51,9 +52,20 @@
 					if (angular.isDefined(attrs.nodeId)) {
 						attrPath.nodeId = $parse(attrs.nodeId)(scope);
 					}
+					if (angular.isDefined(attrs.orderBy)) {
+						attrs.$observe('orderBy', function(newVal, oldVal) {
+							orderBy = newVal;
+							buildTreeTable();
+						});
+					}
 
-					var links = $parse(attrs.links)(scope);
-					var nodes = $parse(attrs.nodes)(scope);
+					var links;
+					var nodes;
+					$parse(attrs.getInitial)(scope)().then(function(data) {
+						links = data.links;
+						nodes = data.nodes;
+						buildTreeTable();
+					});
 
 					var collapsedRowIds = createSet();
 
@@ -80,6 +92,16 @@
 										if ( angular.isArray(returnedObjs.nodes) ) {
 											nodes.push.apply(nodes, returnedObjs.nodes);
 										}
+										var currentNodeId = $parse(attrPath.nodeId)(row.node);
+										Object.keys(prevTree).forEach(function(key) {
+											if ($parse(attrPath.nodeId)(prevTree[key].node) === currentNodeId) {
+												prevTree[key] = angular.extend({}, prevTree[key]);
+												if (prevTree[key].id !== row.id) {
+													collapsedRowIds.push(prevTree[key].id);
+												}
+
+											}
+										});
 										row.isLoading = false;
 										collapsedRowIds.remove(row.id);
 										buildTreeTable();
@@ -94,6 +116,8 @@
 
 					var prevTree = {};
 					var buildTreeTable = function() {
+						if (!nodes || !links) {return;}
+
 						var startTime = new Date();
 						scope.treeTableObjDisplayArray.length = 0;
 						var nodesMap = {};
@@ -185,24 +209,25 @@
 							treeStructure.push( resolveChildren( {node: node, link: null, level: 0} ) );
 						});
 
+						var predReverse = false;
 						var flattenTree;
 						flattenTree = function(row) {
 							prevTree[row.id] = row;
 							scope.treeTableObjDisplayArray.push(row);
 							if (row.children) {
+								row.children = $filter('orderBy')(row.children, orderBy, predReverse);
 								row.children.forEach(function(childRow) {
 									flattenTree(childRow);
 								});
 							}
 						};
+						treeStructure = $filter('orderBy')(treeStructure, orderBy, predReverse);
 						treeStructure.forEach(function(row) {
 							flattenTree(row);
 						});
 
 						var endTime = new Date();
 					};
-
-					buildTreeTable();
 
 				};
 			}
