@@ -48,7 +48,7 @@ get-children-fn = function(node) {
 ```
 
 Example Usage
-```
+```html
 <table>
 	<tbody nz-treetable
 		get-initial="initialObjs" get-children-fn="doStuff"
