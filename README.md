@@ -22,7 +22,7 @@ Live Example: http://EnzeyNet.github.io/TreeTable
 | false | loading-indicator-template | A template for the loading indicator that is displayed while the get-children-fn is being resolved. |
 
 get-initial definition example
-```
+```javascript
 get-initial = function() {
 	var deferred = $q.defer();
 	deferred.resolve({
@@ -35,7 +35,7 @@ get-initial = function() {
 ```
 
 get-children-fn definition example
-```
+```javascript
 get-children-fn = function(node) {
 	var deferred = $q.defer();
 	deferred.resolve({
