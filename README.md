@@ -9,17 +9,17 @@ Directive Name: nzTreetable
 
 Live Example: http://EnzeyNet.github.io/TreeTable
 
-| required | directive params | description |
+| directive params | description |
 | -------- | ---------------- | ----------- |
-| true | get-initial | A promise that return the initial set of nodes and links. |
-| false | get-children-fn | A promise that is called to retrieve children that are not loaded yet. |
-| false | node-id | The location within the 'node' object to its unique identifier. Default: 'id' |
-| false | parent-node-id | The location within the 'link' object to its parent node's unique identifier. Default: 'parentId' |
-| false | child-node-id | The location within the 'link' object to its child node's unique identifier. Default: 'childId' |
-| false | order-by | A string or array to sort the objects by. Same syntax as the orderBy for ng-repeat. |
-| false | expand-indicator-template | A template for the expand indicator that is displayed if a node has unexpanded children. |
-| false | collapse-indicator-template | A template for the collapse indicator that is displayed if a node has expanded children. |
-| false | loading-indicator-template | A template for the loading indicator that is displayed while the get-children-fn is being resolved. |
+| get-initial | A promise that return the initial set of nodes and links. |
+| get-children-fn | A promise that is called to retrieve children that are not loaded yet. |
+| node-id | The location within the 'node' object to its unique identifier. Default: 'id' |
+| parent-node-id | The location within the 'link' object to its parent node's unique identifier. Default: 'parentId' |
+| child-node-id | The location within the 'link' object to its child node's unique identifier. Default: 'childId' |
+| order-by | A string or array to sort the objects by. Same syntax as the orderBy for ng-repeat. |
+| expand-indicator-template | A template for the expand indicator that is displayed if a node has unexpanded children. |
+| collapse-indicator-template | A template for the collapse indicator that is displayed if a node has expanded children. |
+| loading-indicator-template | A template for the loading indicator that is displayed while the get-children-fn is being resolved. |
 
 get-initial definition example
 ```javascript
