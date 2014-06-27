@@ -78,30 +78,47 @@
 						}
 					};
 
+					var findRowsForNode = function(node) {
+						var nodeId = $parse(attrPath.nodeId)(node);
+						var rowIds = [];
+						Object.keys(prevTree).forEach(function(key) {
+							if ($parse(attrPath.nodeId)(prevTree[key].node) === nodeId) {
+								rowIds.push(key);
+							}
+						});
+
+						return rowIds;
+					}
+
 					scope.expandRow = function(row) {
 						if (!row.isLoading) {
 							// Force update of current row
 							prevTree[row.id] = angular.extend({}, prevTree[row.id]);
 							if (row.hasChildren && !collapsedRowIds.contains(row.id)) {
 								row.isLoading = true;
+								var rowIdsOfSameNode = findRowsForNode(row.node);
+								rowIdsOfSameNode.forEach(function(rowId) {
+									prevTree[rowId] = angular.extend({}, prevTree[rowId]);
+									prevTree[rowId].isLoading = true;
+									if (prevTree[rowId].id !== row.id) {
+										collapsedRowIds.push(prevTree[rowId].id);
+									}
+								});
+
 								getChildrenFn(row.node).then(function(returnedObjs) {
 									if (returnedObjs) {
-										if ( angular.isArray(returnedObjs.links) ) {
-											links.push.apply(links, returnedObjs.links);
-										}
-										if ( angular.isArray(returnedObjs.nodes) ) {
-											nodes.push.apply(nodes, returnedObjs.nodes);
-										}
-										var currentNodeId = $parse(attrPath.nodeId)(row.node);
-										Object.keys(prevTree).forEach(function(key) {
-											if ($parse(attrPath.nodeId)(prevTree[key].node) === currentNodeId) {
-												prevTree[key] = angular.extend({}, prevTree[key]);
-												if (prevTree[key].id !== row.id) {
-													collapsedRowIds.push(prevTree[key].id);
-												}
+										// Merge results with existing objects
+										links.push.apply(links, returnedObjs.links);
+										nodes.push.apply(nodes, returnedObjs.nodes);
 
+										rowIdsOfSameNode.forEach(function(rowId) {
+											prevTree[rowId] = angular.extend({}, prevTree[rowId]);
+											prevTree[rowId].isLoading = false;
+											if (prevTree[rowId].id !== row.id) {
+												collapsedRowIds.push(prevTree[rowId].id);
 											}
 										});
+
 										row.isLoading = false;
 										collapsedRowIds.remove(row.id);
 										buildTreeTable();
@@ -109,8 +126,9 @@
 								});
 							} else {
 								collapsedRowIds.remove(row.id);
-								buildTreeTable();
 							}
+
+							buildTreeTable();
 						}
 					};
 
@@ -168,9 +186,13 @@
 							}
 							if (prevTree[row.id]) {
 								prevTree[row.id].children = null;
+								row.isLoading = prevTree[row.id].isLoading;
 								row = angular.extend(prevTree[row.id], row);
 							}
-							if (!collapsedRowIds.contains(row.id)) {
+							if (collapsedRowIds.contains(row.id)) {
+								row.hasChildren = true;
+								row.isExpanded = false;
+							} else {
 								var childLinks = linksByParent[ nodeId ];
 								if (childLinks) {
 									row.children = [];
@@ -195,10 +217,6 @@
 										row.isExpanded = true;
 									}
 								}
-							} else {
-								row.hasChildren = true;
-								row.isExpanded = false;
-								collapsedRowIds.push(row.id);
 							}
 
 							return row;
@@ -242,24 +260,15 @@
 
 					var iconElem = angular.element('<div style="display: inline; border-radius: 100%; font-weight: bold; font-size: 1em; cursor: pointer"></div>');
 					if (scope.row.hasChildren) {
-						if (scope.row.isExpanded) {
+						if (scope.row.isLoading) {
+							iconElem.text('\u23F0');
+						} else if (scope.row.isExpanded) {
 							iconElem.text('\u02C5');
 							iconElem.attr('ng-click', 'collapseRow(row)');
 						} else {
 							iconElem.text('\u02C3');
 							iconElem.attr('ng-click', 'expandRow(row)');
 						}
-						/*
-						iconElem.text('\u02C5');
-						iconElem.attr('ng-click', 'collapseRow(row)');
-						iconElem.attr('ng-show', 'row.isExpanded');
-						indentElem.append(iconElem);
-
-						iconElem = angular.element('<div style="display: inline; border-radius: 100%; font-weight: bold; font-size: 1em; cursor: pointer"></div>');
-						iconElem.text('\u02C3');
-						iconElem.attr('ng-click', 'expandRow(row)');
-						iconElem.attr('ng-hide', 'row.isExpanded');
-						*/
 					} else {
 						iconElem.text('\u02C5');
 						iconElem.css('visibility', 'none');

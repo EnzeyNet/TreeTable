@@ -18,25 +18,27 @@
 			var deferred = $q.defer();
 
 			if (node.idy == 7) {
-				deferred.resolve({
-					nodes: [
-						{
-							idy: 13,
-							name: 'node13',
-							myValue: 'dfdfgh'
-						}
-					],
-					links: [
-						{
-							parentId: 7,
-							childId: 13,
-						}
-					]
-				});
+				$timeout(function() {
+					deferred.resolve({
+						nodes: [
+							{
+								idy: 13,
+								name: 'node13',
+								myValue: 'dfdfgh'
+							}
+						],
+						links: [
+							{
+								parentId: 7,
+								childId: 13,
+							}
+						]
+					});
+				}, 4000);
 			} else {
 				deferred.resolve();
 			}
-			alert('Faked AJAX call complete');
+
 			return deferred.promise;
 		};
 
