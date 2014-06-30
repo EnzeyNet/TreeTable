@@ -14,6 +14,7 @@ Live Example: http://EnzeyNet.github.io/TreeTable
 | get-initial | A promise that return the initial set of nodes and links. |
 | get-children-fn | A promise that is called to retrieve children that are not loaded yet. |
 | node-id | The location within the 'node' object to its unique identifier. Default: 'id' |
+| link-id | The location within the 'link' object to its unique identifier. Default: 'id' |
 | parent-node-id | The location within the 'link' object to its parent node's unique identifier. Default: 'parentId' |
 | child-node-id | The location within the 'link' object to its child node's unique identifier. Default: 'childId' |
 | order-by | A string or array to sort the objects by. Same syntax as the orderBy for ng-repeat. |
@@ -21,8 +22,29 @@ Live Example: http://EnzeyNet.github.io/TreeTable
 | collapse-indicator-template | A template for the collapse indicator that is displayed if a node has expanded children. |
 | loading-indicator-template | A template for the loading indicator that is displayed while the get-children-fn is being resolved. |
 
-####Indicating a node has children
-Any node that is referenced by a link's parent id will be rendered as if it has children, by displaying the expand / collapse icon. Passing a link that has no child id indicates that the node has childen that are not loaded and the _get-children-fn_ needs to be called for the node when the expander is clicked.
+
+#### Data Model
+To denote a node that has children that are not yet loaded return a link object that has a parent-node-id but no child-node-id: {parentPartId: 123}
+When this node is expected the node object will be passed to _get-children-fn_.
+
+The return from get-initial and get-children-fn should be an object with an array of the node under the 'nodes' key and an array of links under the 'links' key:
+```javascript
+{
+	nodes: NODE_ARRAY,
+	links: LINK_ARRAY,
+}
+```
+
+The data model for each row contains the exact node and link objects as they were given to the directive and looks like:
+```javascript
+{
+	row : {
+		node: NODE_OBJ,
+		link: LINK_OBJ
+	}
+}
+```
+To access data on the node object you would do {{row.node.ATTRIBUE}} and likewise for the link object {{row.node.ATTRIBUTE}}
 
 
 #####Example Directive Usage
@@ -30,7 +52,7 @@ Any node that is referenced by a link's parent id will be rendered as if it has 
 <table>
 	<tbody nz-treetable
 		get-initial="initialObjs" get-children-fn="doStuff"
-		node-id="'myChildId'" parent-node-id="'myParentd'" child-node-id="'myId'"
+		node-id="'partId'" link-id="'linkId'" parent-node-id="'parentPartId'" child-node-id="'childPartId'"
 		order-by="node.myValue">
 
 		<tr>
@@ -46,8 +68,58 @@ get-initial definition example
 get-initial = function() {
 	var deferred = $q.defer();
 	deferred.resolve({
-		nodes: nodesArray,
-		links: linksArray
+		nodes: [
+			{
+				name: 'Part 1',
+				partId: 1,
+				weight: '32',
+				nodeAttribute1: 'moreInfo'
+			},
+			{
+				name: 'Part 2',
+				partId: 2,
+				weight: '16',
+				nodeAttribute1: 'moreInfo'
+			},
+			{
+				name: 'Part 3',
+				partId: 3,
+				weight: '12',
+				nodeAttribute1: 'moreInfo'
+			},
+			{
+				name: 'Part 4',
+				partId: 4,
+				weight: '9',
+				nodeAttribute1: 'moreInfo'
+			}
+		],
+		links: [
+			{
+				linkId: 1,
+				parentPartId: 1,
+				childPartId: 2,
+				linkAttribute1: 'moreInfo'
+			},
+			{
+				linkId: 2,
+				parentPartId: 1,
+				childPartId: 3,
+				linkAttribute1: 'moreInfo'
+			},
+			{
+				linkId: 3,
+				parentPartId: 2,
+				childPartId: 4,
+				linkAttribute1: 'moreInfo'
+			},
+			{
+				linkId: 14,
+				parentPartId: 3,
+				childPartId: 4,
+				linkAttribute1: 'moreInfo'
+			}
+		]
 	});
 
 	return deferred.promise;
