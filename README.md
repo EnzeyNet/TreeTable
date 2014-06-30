@@ -18,6 +18,7 @@ Live Example: http://EnzeyNet.github.io/TreeTable
 | parent-node-id | The location within the 'link' object to its parent node's unique identifier. Default: 'parentId' |
 | child-node-id | The location within the 'link' object to its child node's unique identifier. Default: 'childId' |
 | order-by | A string or array to sort the objects by. Same syntax as the orderBy for ng-repeat. |
+| order-reverse | (boolean) If the table should be sorted in reverse order. Default: false |
 | expand-indicator-template | A template for the expand indicator that is displayed if a node has unexpanded children. |
 | collapse-indicator-template | A template for the collapse indicator that is displayed if a node has expanded children. |
 | loading-indicator-template | A template for the loading indicator that is displayed while the get-children-fn is being resolved. |
