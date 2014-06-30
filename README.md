@@ -23,6 +23,7 @@ Live Example: http://EnzeyNet.github.io/TreeTable
 | collapse-indicator-template | A template for the collapse indicator that is displayed if a node has expanded children. |
 | loading-indicator-template | A template for the loading indicator that is displayed while the get-children-fn is being resolved. |
 
+To create the indented structure of the tree and expose the expand / collapse glyphs add the _treetable-indent_ directive to any TD element.
 
 #### Data Model
 To denote a node that has children that are not yet loaded return a link object that has a parent-node-id but no child-node-id: {parentPartId: 123}
