@@ -57,7 +57,7 @@ To access data on the node object you would do {{row.node.ATTRIBUE}} and likewis
 
 		<tr>
 			<td treetable-indent></div><span>{{row.node.name}}</span></td>
-			<td><input ng-model="row.node.myValue"></input></td>
+			<td>{{row.link.nodeAttribute1}}</td>
 		</tr>
 	</tbody>
 </table>
