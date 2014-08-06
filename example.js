@@ -1,16 +1,62 @@
 (function (angular) {
 	"use strict";
 
-	var module = angular.module('net.enzey.example', ['net.enzey.treetable']);
+	var module = angular.module('net.enzey.example',
+		[
+			'net.enzey.virtual-scroll',
+			'net.enzey.treetable'
+		]
+	);
+
+	var idIndex = 0;
+	var getNextId = function() {
+		return idIndex++;
+	};
+
+	var generateTreeLevel;
+	generateTreeLevel = function(count, moreLevels, parentId) {
+		var links = [];
+		for (var i=0; i < count; i++) {
+			var link = {id: 'L' + getNextId(), childId: 'N' + getNextId(), parentId: parentId,};
+			links.push(link);
+			if (moreLevels > 0) {
+				var nextLevel = generateTreeLevel(count, moreLevels - 1, link.childId);
+				nextLevel.forEach(function(thisLink) {
+					links.push(thisLink);
+				});
+			}
+		}
+
+		return links;
+	};
+
+	var genNodes = function(links) {
+		var nodeIdToNode = {};
+		links.forEach(function(link) {
+			if (!nodeIdToNode[link.childId]) {
+				nodeIdToNode[link.childId] = {id: link.childId, name: link.childId};
+			}
+			if (link.parentId && !nodeIdToNode[link.parentId]) {
+				nodeIdToNode[link.parentId] = {id: link.parentId, name: link.parentId};
+			}
+		});
+
+		return Object.keys(nodeIdToNode).map(function(v) { return nodeIdToNode[v]; });
+	};
+
+	var depth = 5;
+	var breath = 5;
+	var links10to5 = generateTreeLevel(breath, depth, 'N' + getNextId());
+	var testData = {
+		links: links10to5,
+		nodes: genNodes(links10to5),
+	};
 
 	module.controller('treetableController', function ($scope, $q, $timeout, $sce) {
 
 		$scope.initialObjs = function() {
 			var deferred = $q.defer();
-			deferred.resolve({
-				nodes: nodes,
-				links: links
-			});
+			deferred.resolve(testData);
 			return deferred.promise;
 		};
 

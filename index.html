@@ -7,23 +7,32 @@
 				display: none !important;
 			}
 		</style>
+		<style>
+			.scrolling {
+				height: 100%;
+				overflow: auto;
+			}
+		</style>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.17/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="example.js"></script>
+		<script src="dist/TreeTable.js"></script>
+		<script src="https://raw.githubusercontent.com/EnzeyNet/VirtualScroll/master/src/nzVirtualScroll.js"></script>
+
 	</head>
 	<body ng-controller="treetableController">
 
-		<div class="panel panel-primary">
+		<div class="panel panel-primary scrolling">
 			<table>
-				<tbody nz-treetable get-initial="initialObjs" node-id="'idy'" get-children-fn="doStuff" order-by="node.myValue">
-					<tr>
+				<tbody nz-treetable get-initial="initialObjs" get-children-fn="doStuff" order-by="node.myValue">
+					<tr nz-vs nz-vs-buffer="4">
 						<td treetable-indent></div><span>{{row.node.name}}</span></td>
 						<td><input ng-model="row.node.myValue"></input></td>
 					</tr>
 				</tbody>
 			</table>
 		</div>
-
-		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.8/angular.js"></script>
-		<script src="TreeTable.js"></script>
-		<script src="example.js"></script>
 
 	</body>
 </html>
