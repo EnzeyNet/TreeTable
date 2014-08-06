@@ -27,226 +27,237 @@
 		return set;
 	};
 
+	var getRootNodes = function(parentNodes, childNodes) {
+		var rootNodes = [];
+		var allParentNodes = Object.keys(parentNodes);
+
+		for (var i = 0; i < allParentNodes.length; i++) {
+			if (!childNodes[ allParentNodes[i] ]) {
+				rootNodes.push( parentNodes[allParentNodes[i]] );
+			}
+		}
+
+		return rootNodes;
+	};
+
 	module.directive('nzTreetable', function ($parse, $sce, $timeout, $filter) {
 		return {
 			scope: true,
-			compile: function(element, attrs){
-				element.find('tr').attr('ng-repeat', 'row in treeTableObjDisplayArray');
+			compile: function($element, attrs){
+				$element.find('tr').attr('ng-repeat', 'row in treeTableObjDisplayArray | limitTo: 300');
 				var attrPath = {
 					parentNodeId: 'parentId',
 					childNodeId: 'childId',
 					nodeId: 'id'
 				};
 
-				return function (scope, element, attrs) {
-					var uniqueSpacer = "\u0099";
-					scope.treeTableObjDisplayArray = [];
-					var orderBy = '';
-					var getChildrenFn = $parse(attrs.getChildrenFn)(scope);
-					if (angular.isDefined(attrs.parentNodeId)) {
-						attrPath.parentNodeId = $parse(attrs.parentNodeId)(scope);
-					}
-					if (angular.isDefined(attrs.childNodeId)) {
-						attrPath.childNodeId = $parse(attrs.childNodeId)(scope);
-					}
-					if (angular.isDefined(attrs.nodeId)) {
-						attrPath.nodeId = $parse(attrs.nodeId)(scope);
-					}
-					if (angular.isDefined(attrs.orderBy)) {
-						attrs.$observe('orderBy', function(newVal, oldVal) {
-							orderBy = newVal;
-							buildTreeTable();
-						});
-					}
+				return {
+					pre :function (scope, element, attrs) {
+						var uniqueSpacer = "\u0099";
+						scope.treeTableObjDisplayArray = [];
+						var orderBy = '';
+						var getChildrenFn = $parse(attrs.getChildrenFn)(scope);
 
-					var links;
-					var nodes;
-					$parse(attrs.getInitial)(scope)().then(function(data) {
-						links = data.links;
-						nodes = data.nodes;
-						buildTreeTable();
-					});
-
-					var collapsedRowIds = createSet();
-
-					scope.collapseRow = function(row) {
-						// Force update of current row
-						prevTree[row.id] = angular.extend({}, prevTree[row.id]);
-						if (!collapsedRowIds.contains(row.id)) {
-							collapsedRowIds.push(row.id);
-							buildTreeTable();
+						if (angular.isDefined(attrs.parentNodeId)) {
+							attrPath.parentNodeId = $parse(attrs.parentNodeId)(scope);
 						}
-					};
+						var parseParentNodeId = $parse(attrPath.parentNodeId);
 
-					var findRowsForNode = function(node) {
-						var nodeId = $parse(attrPath.nodeId)(node);
-						var rowIds = [];
-						Object.keys(prevTree).forEach(function(key) {
-							if ($parse(attrPath.nodeId)(prevTree[key].node) === nodeId) {
-								rowIds.push(key);
-							}
+						if (angular.isDefined(attrs.childNodeId)) {
+							attrPath.childNodeId = $parse(attrs.childNodeId)(scope);
+						}
+						var parseChildNodeId = $parse(attrPath.childNodeId);
+
+						if (angular.isDefined(attrs.nodeId)) {
+							attrPath.nodeId = $parse(attrs.nodeId)(scope);
+						}
+						var parseNodeId = $parse(attrPath.nodeId);
+
+						if (angular.isDefined(attrs.orderBy)) {
+							attrs.$observe('orderBy', function(newVal, oldVal) {
+								orderBy = newVal;
+								scope.buildTreeTable();
+							});
+						}
+
+						var links;
+						var nodes;
+						$parse(attrs.getInitial)(scope)().then(function(data) {
+							links = data.links;
+							nodes = data.nodes;
+							scope.buildTreeTable();
 						});
 
-						return rowIds;
-					}
+						var collapsedRowIds = createSet();
 
-					scope.expandRow = function(row) {
-						if (!row.isLoading) {
+						scope.collapseRow = function(row) {
 							// Force update of current row
 							prevTree[row.id] = angular.extend({}, prevTree[row.id]);
-							if (row.hasChildren && !collapsedRowIds.contains(row.id)) {
-								row.isLoading = true;
-								var rowIdsOfSameNode = findRowsForNode(row.node);
-								rowIdsOfSameNode.forEach(function(rowId) {
-									prevTree[rowId] = angular.extend({}, prevTree[rowId]);
-									prevTree[rowId].isLoading = true;
-									if (prevTree[rowId].id !== row.id) {
-										collapsedRowIds.push(prevTree[rowId].id);
-									}
-								});
-
-								getChildrenFn(row.node).then(function(returnedObjs) {
-									if (returnedObjs) {
-										// Merge results with existing objects
-										links.push.apply(links, returnedObjs.links);
-										nodes.push.apply(nodes, returnedObjs.nodes);
-
-										rowIdsOfSameNode.forEach(function(rowId) {
-											prevTree[rowId] = angular.extend({}, prevTree[rowId]);
-											prevTree[rowId].isLoading = false;
-											if (prevTree[rowId].id !== row.id) {
-												collapsedRowIds.push(prevTree[rowId].id);
-											}
-										});
-
-										row.isLoading = false;
-										collapsedRowIds.remove(row.id);
-										buildTreeTable();
-									}
-								});
-							} else {
-								collapsedRowIds.remove(row.id);
+							if (!collapsedRowIds.contains(row.id)) {
+								collapsedRowIds.push(row.id);
+								scope.buildTreeTable();
 							}
+						};
 
-							buildTreeTable();
+						var findRowsForNode = function(node) {
+							var nodeId = parseNodeId(node);
+							var rowIds = [];
+							Object.keys(prevTree).forEach(function(key) {
+								if (parseNodeId(prevTree[key].node) === nodeId) {
+									rowIds.push(key);
+								}
+							});
+
+							return rowIds;
 						}
-					};
 
-					var prevTree = {};
-					var buildTreeTable = function() {
-						if (!nodes || !links) {return;}
-
-						var startTime = new Date();
-						scope.treeTableObjDisplayArray.length = 0;
-						var nodesMap = {};
-						nodes.forEach(function(node) {
-							nodesMap[ $parse(attrPath.nodeId)(node) ] = node;
-						});
-
-						var linksByParent = {};
-						var linksByChild = {};
-
-						links.forEach(function(link) {
-							var parentId = $parse(attrPath.parentNodeId)(link);
-							if (nodesMap[parentId]) {
-								if (!linksByParent[parentId]) {
-									linksByParent[parentId] = [];
-								}
-								linksByParent[parentId].push(link);
-							}
-							var childId = $parse(attrPath.childNodeId)(link);
-							if (nodesMap[childId]) {
-								if (!linksByChild[childId]) {
-									linksByChild[childId] = [];
-								}
-								linksByChild[childId].push(link);
-							}
-						});
-
-						// Find root Nodes
-						var rootNodes = [];
-
-						var allParentNodes = Object.keys(linksByParent);
-						var allchildNodes = Object.keys(linksByChild);
-
-						allParentNodes.forEach(function(nodeId) {
-							var indexof = allchildNodes.indexOf(nodeId);
-							if (indexof === -1) {
-								rootNodes.push(nodesMap[nodeId]);
-							}
-						});
-
-						var resolveChildren;
-						resolveChildren = function(row) {
-							var nodeId = $parse(attrPath.nodeId)(row.node);
-							if (row.id) {
-								row.id += uniqueSpacer + nodeId + uniqueSpacer + row.link.id;
-							} else {
-								row.id = nodeId + uniqueSpacer + 'root';
-							}
-							if (prevTree[row.id]) {
-								prevTree[row.id].children = null;
-								row.isLoading = prevTree[row.id].isLoading;
-								row = angular.extend(prevTree[row.id], row);
-							}
-							if (collapsedRowIds.contains(row.id)) {
-								row.hasChildren = true;
-								row.isExpanded = false;
-							} else {
-								var childLinks = linksByParent[ nodeId ];
-								if (childLinks) {
-									row.children = [];
-									childLinks.forEach(function(link) {
-										var childNode = nodesMap[ $parse(attrPath.childNodeId)(link) ];
-										if (childNode) {
-											row.children.push(resolveChildren(
-												{
-													node: childNode,
-													link: link,
-													level: row.level + 1,
-													id: row.id,
-													parent: row
-												}
-											));
+						scope.expandRow = function(row) {
+							if (!row.isLoading) {
+								// Force update of current row
+								prevTree[row.id] = angular.extend({}, prevTree[row.id]);
+								if (row.hasChildren && !collapsedRowIds.contains(row.id)) {
+									row.isLoading = true;
+									var rowIdsOfSameNode = findRowsForNode(row.node);
+									rowIdsOfSameNode.forEach(function(rowId) {
+										prevTree[rowId] = angular.extend({}, prevTree[rowId]);
+										prevTree[rowId].isLoading = true;
+										if (prevTree[rowId].id !== row.id) {
+											collapsedRowIds.push(prevTree[rowId].id);
 										}
 									});
+
+									getChildrenFn(row.node).then(function(returnedObjs) {
+										if (returnedObjs) {
+											// Merge results with existing objects
+											links.push.apply(links, returnedObjs.links);
+											nodes.push.apply(nodes, returnedObjs.nodes);
+
+											rowIdsOfSameNode.forEach(function(rowId) {
+												prevTree[rowId] = angular.extend({}, prevTree[rowId]);
+												prevTree[rowId].isLoading = false;
+												if (prevTree[rowId].id !== row.id) {
+													collapsedRowIds.push(prevTree[rowId].id);
+												}
+											});
+
+											row.isLoading = false;
+											collapsedRowIds.remove(row.id);
+											scope.buildTreeTable();
+										}
+									});
+								} else {
+									collapsedRowIds.remove(row.id);
 								}
-								if (row.children) {
+
+								scope.buildTreeTable();
+							}
+						};
+
+						var prevTree = {};
+						scope.buildTreeTable = function() {
+							if (!nodes || !links) {return;}
+
+							var startTime = new Date();
+							scope.treeTableObjDisplayArray.length = 0;
+							var nodesMap = {};
+							nodes.forEach(function(node) {
+								nodesMap[ parseNodeId(node) ] = node;
+							});
+
+							var linksByParent = {};
+							var linksByChild = {};
+
+							links.forEach(function(link) {
+								var parentId = parseParentNodeId(link);
+								if (nodesMap[parentId]) {
+									if (!linksByParent[parentId]) {
+										linksByParent[parentId] = [];
+									}
+									linksByParent[parentId].push(link);
+								}
+								var childId = parseChildNodeId(link);
+								if (nodesMap[childId]) {
+									if (!linksByChild[childId]) {
+										linksByChild[childId] = [];
+									}
+									linksByChild[childId].push(link);
+								}
+							});
+
+							var resolveChildren;
+							resolveChildren = function(row) {
+								var nodeId = parseNodeId(row.node);
+								if (row.id) {
+									row.id += uniqueSpacer + nodeId + uniqueSpacer + row.link.id;
+								} else {
+									row.id = nodeId + uniqueSpacer + 'root';
+								}
+								if (prevTree[row.id]) {
+									prevTree[row.id].children = null;
+									row.isLoading = prevTree[row.id].isLoading;
+									row = angular.extend(prevTree[row.id], row);
+								}
+								if (collapsedRowIds.contains(row.id)) {
 									row.hasChildren = true;
-									if (row.children.length > 0) {
-										row.isExpanded = true;
+									row.isExpanded = false;
+								} else {
+									var childLinks = linksByParent[ nodeId ];
+									if (childLinks) {
+										row.children = [];
+										childLinks.forEach(function(link) {
+											var childNode = nodesMap[ parseChildNodeId(link) ];
+											if (childNode) {
+												row.children.push(resolveChildren(
+													{
+														node: childNode,
+														link: link,
+														level: row.level + 1,
+														id: row.id,
+														parent: row
+													}
+												));
+											}
+										});
+									}
+									if (row.children) {
+										row.hasChildren = true;
+										if (row.children.length > 0) {
+											row.isExpanded = true;
+										}
 									}
 								}
-							}
 
-							return row;
+								return row;
+							};
+
+							// Find root Nodes
+							var rootNodes = getRootNodes(nodesMap, linksByChild);
+
+							var treeStructure = [];
+							rootNodes.forEach(function(node) {
+								treeStructure.push( resolveChildren( {node: node, link: null, level: 0} ) );
+							});
+
+							var filterOrderBy = $filter('orderBy');
+							var predReverse = false;
+							var flattenTree;
+							flattenTree = function(row) {
+								prevTree[row.id] = row;
+								scope.treeTableObjDisplayArray.push(row);
+								if (row.children) {
+									row.children = filterOrderBy(row.children, orderBy, predReverse);
+									row.children.forEach(function(childRow) {
+										flattenTree(childRow);
+									});
+								}
+							};
+							treeStructure = filterOrderBy(treeStructure, orderBy, predReverse);
+							treeStructure.forEach(flattenTree);
+
+							var endTime = new Date();
 						};
 
-						var treeStructure = [];
-						rootNodes.forEach(function(node) {
-							treeStructure.push( resolveChildren( {node: node, link: null, level: 0} ) );
-						});
-
-						var predReverse = false;
-						var flattenTree;
-						flattenTree = function(row) {
-							prevTree[row.id] = row;
-							scope.treeTableObjDisplayArray.push(row);
-							if (row.children) {
-								row.children = $filter('orderBy')(row.children, orderBy, predReverse);
-								row.children.forEach(function(childRow) {
-									flattenTree(childRow);
-								});
-							}
-						};
-						treeStructure = $filter('orderBy')(treeStructure, orderBy, predReverse);
-						treeStructure.forEach(function(row) {
-							flattenTree(row);
-						});
-
-						var endTime = new Date();
-					};
-
+					}
 				};
 			}
 		}
