@@ -47,16 +47,25 @@
 	var depth = 5;
 	var breath = 5;
 	var links10to5 = generateTreeLevel(breath, depth, 'N' + getNextId());
-	var testData = {
-		links: links10to5,
-		nodes: genNodes(links10to5),
-	};
 
 	module.controller('treetableController', function ($scope, $q, $timeout, $sce) {
+		$scope.getHeight = function(node) {
+			var id = node.id.slice(1);
+			var height = +id % 8;
+			height++;
+			height *= 10;
+			height += 10;
+			return height + 'px'
+		};
+
+		$scope.testData = {
+			links: links10to5,
+			nodes: genNodes(links10to5),
+		};
 
 		$scope.initialObjs = function() {
 			var deferred = $q.defer();
-			deferred.resolve(testData);
+			deferred.resolve($scope.testData);
 			return deferred.promise;
 		};
 

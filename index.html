@@ -24,7 +24,8 @@
 	<body ng-controller="treetableController">
 
 		<div class="panel panel-primary scrolling">
-			<table>
+
+			<table style="border-collapse: collapse">
 				<tbody nz-treetable get-initial="initialObjs" get-children-fn="doStuff" order-by="node.myValue">
 					<tr nz-vs nz-vs-buffer="4">
 						<td treetable-indent></div><span>{{row.node.name}}</span></td>
@@ -32,6 +33,7 @@
 					</tr>
 				</tbody>
 			</table>
+
 		</div>
 
 	</body>

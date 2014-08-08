@@ -31,7 +31,8 @@
 		var rootNodes = [];
 		var allParentNodes = Object.keys(parentNodes);
 
-		for (var i = 0; i < allParentNodes.length; i++) {
+		var i = allParentNodes.length;
+		while (i--) {
 			if (!childNodes[ allParentNodes[i] ]) {
 				rootNodes.push( parentNodes[allParentNodes[i]] );
 			}
@@ -102,11 +103,15 @@
 						var findRowsForNode = function(node) {
 							var nodeId = parseNodeId(node);
 							var rowIds = [];
-							Object.keys(prevTree).forEach(function(key) {
+							var keys = Object.keys(prevTree);
+
+							var i = keys.length;
+							while (i--) {
+								var key = keys[i];
 								if (parseNodeId(prevTree[key].node) === nodeId) {
 									rowIds.push(key);
 								}
-							});
+							}
 
 							return rowIds;
 						}
@@ -118,13 +123,15 @@
 								if (row.hasChildren && !collapsedRowIds.contains(row.id)) {
 									row.isLoading = true;
 									var rowIdsOfSameNode = findRowsForNode(row.node);
-									rowIdsOfSameNode.forEach(function(rowId) {
+									var i = rowIdsOfSameNode.length;
+									while (i--) {
+										var rowId = rowIdsOfSameNode[i];
 										prevTree[rowId] = angular.extend({}, prevTree[rowId]);
 										prevTree[rowId].isLoading = true;
 										if (prevTree[rowId].id !== row.id) {
 											collapsedRowIds.push(prevTree[rowId].id);
 										}
-									});
+									}
 
 									getChildrenFn(row.node).then(function(returnedObjs) {
 										if (returnedObjs) {
@@ -132,13 +139,15 @@
 											links.push.apply(links, returnedObjs.links);
 											nodes.push.apply(nodes, returnedObjs.nodes);
 
-											rowIdsOfSameNode.forEach(function(rowId) {
+											var i = rowIdsOfSameNode.length;
+											while (i--) {
+												var rowId = rowIdsOfSameNode[i];
 												prevTree[rowId] = angular.extend({}, prevTree[rowId]);
 												prevTree[rowId].isLoading = false;
 												if (prevTree[rowId].id !== row.id) {
 													collapsedRowIds.push(prevTree[rowId].id);
 												}
-											});
+											};
 
 											row.isLoading = false;
 											collapsedRowIds.remove(row.id);
@@ -160,14 +169,19 @@
 							var startTime = new Date();
 							scope.treeTableObjDisplayArray.length = 0;
 							var nodesMap = {};
-							nodes.forEach(function(node) {
+
+							var iNodes = nodes.length;
+							while (iNodes--) {
+								var node = nodes[iNodes];
 								nodesMap[ parseNodeId(node) ] = node;
-							});
+							}
 
 							var linksByParent = {};
 							var linksByChild = {};
 
-							links.forEach(function(link) {
+							var iLinks = links.length;
+							while (iLinks--) {
+								var link = links[iLinks];
 								var parentId = parseParentNodeId(link);
 								if (nodesMap[parentId]) {
 									if (!linksByParent[parentId]) {
@@ -182,7 +196,7 @@
 									}
 									linksByChild[childId].push(link);
 								}
-							});
+							}
 
 							var resolveChildren;
 							resolveChildren = function(row) {
@@ -204,7 +218,10 @@
 									var childLinks = linksByParent[ nodeId ];
 									if (childLinks) {
 										row.children = [];
-										childLinks.forEach(function(link) {
+
+										var iChildLinks = childLinks.length;
+										while (iChildLinks--) {
+											var link = childLinks[iChildLinks];
 											var childNode = nodesMap[ parseChildNodeId(link) ];
 											if (childNode) {
 												row.children.push(resolveChildren(
@@ -217,7 +234,7 @@
 													}
 												));
 											}
-										});
+										}
 									}
 									if (row.children) {
 										row.hasChildren = true;
@@ -234,9 +251,12 @@
 							var rootNodes = getRootNodes(nodesMap, linksByChild);
 
 							var treeStructure = [];
-							rootNodes.forEach(function(node) {
+
+							var iRootNodes = rootNodes.length;
+							while (iRootNodes--) {
+								var node = rootNodes[iRootNodes];
 								treeStructure.push( resolveChildren( {node: node, link: null, level: 0} ) );
-							});
+							}
 
 							var filterOrderBy = $filter('orderBy');
 							var predReverse = false;
@@ -246,9 +266,12 @@
 								scope.treeTableObjDisplayArray.push(row);
 								if (row.children) {
 									row.children = filterOrderBy(row.children, orderBy, predReverse);
-									row.children.forEach(function(childRow) {
+
+									var iRowChildren = row.children.length;
+									while (iRowChildren--) {
+										var childRow = row.children[iRowChildren];
 										flattenTree(childRow);
-									});
+									}
 								}
 							};
 							treeStructure = filterOrderBy(treeStructure, orderBy, predReverse);
